@@ -1,0 +1,64 @@
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 21.0"
+
+  name               = local.common_name
+  kubernetes_version = "1.33"
+
+  # Mandatory
+  addons = {
+    coredns                = {}
+    eks-pod-identity-agent = {
+      before_compute = true
+    }
+    kube-proxy             = {}
+    vpc-cni                = {
+      before_compute = true
+    }
+  }
+
+  # Optional
+  endpoint_public_access = false  # we are not giving any public access
+
+  # Optional: Adds the current caller identity as an administrator via cluster access entry
+  enable_cluster_creator_admin_permissions = true  # by default cluster created person will get admin permissions
+
+  vpc_id                   = local.vpc_id
+  subnet_ids               = local.private_subnet_ids           # nodes and control plane(master node) are in PRIVATE SUBNET
+  control_plane_subnet_ids = local.private_subnet_ids           # nodes and control plane(master node) are in PRIVATE SUBNET
+
+  create_node_security_group = false      # create worker node security_group false
+  create_security_group = false           # create master node security_group false 
+
+  node_security_group_id = local.eks_node_sg_id      # attaching existing security_group for worker node
+  security_group_id = local.eks_control_plane_sg_id  # attaching existing security_group for master node
+
+
+  # EKS Managed Node Group(s)
+  eks_managed_node_groups = {
+    blue = {
+      # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
+      ami_type       = "AL2023_x86_64_STANDARD"
+      instance_types = ["t3.small","t3.medium","m5.xlarge","m4.xlarge"]
+      capacity_type = "SPOT"  # then we need to give instance_types more 
+
+      iam_role_additional_policies = {  # adding eds csi and efs csi driver policies to nodes 
+        EBS = "arn:aws:iam::aws:policy/AmazonEBSCSIDriverPolicyV2"
+        EFS = "arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy"
+      }
+
+      min_size     = 2
+      max_size     = 2
+      desired_size = 2
+
+      # This is required AWS LoadBalancerController, to work LoadBalancerController
+      metadata_options = {
+        http_endpoint = "enabled"
+        http_put_response_hop_limit = 2
+        http_tokens = "required"
+      }
+    }
+  }
+
+   tags = local.common_tags
+}

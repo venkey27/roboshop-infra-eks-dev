@@ -1,0 +1,52 @@
+# we are giving bastion role administrator access  so it can create other AWS RESOURCES (INSTANCE CREATION, UPDATE, DELETE)
+
+# ------------------------IMPORTANT-------------------------------------IMPORTANT-----------------------------IMPORTANT-----------------------------------#
+
+# bastion will get eks-cluster-describe access. means bastion will only get "AWS IAM authentication"
+# even tought the bastion has administrator access, bastion cannot access eks, cannot run kubectl commands
+# the one who creates eks cluster they only have admin access and one other person will not get admin access to run kubectl commands
+# if they want kubectl commands acess they have to get acess entries Kubernetes RBAC (Authorization)
+
+# -------------------------IMPORTANT------------------------------------IMPORTANT-------------------------------IMPORTANT---------------------------------#
+
+resource "aws_iam_role" "bastion" {      #creating iam role for bastion
+  name = "${local.common_name}-bastion"
+
+  # Terraform's "jsonencode" function converts a               
+  # Terraform expression result to valid JSON syntax.
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"                   # this policy is for ec2 access
+        }
+      },
+    ]
+  })
+
+  tags = merge (
+        local.common_tags,
+        {
+             Name = "${local.common_name}-bastion"
+        }
+    )
+  
+}
+
+# IAM policy
+resource "aws_iam_role_policy_attachment" "bastion" {              # assiging administrator access for the cretaed bastion IAM role
+  role       = aws_iam_role.bastion.name                           # bastion will get eks-cluster-describe access - will get authentication
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"       # bastion can be used to create other resources for terraform
+} # even tought the bastion has administrator access, bastion cannot access eks, cannot run kubectl commands
+ # the one who creates eks cluster they only have admin access and one other person will not get admin access to run kubectl commands
+ # if they want kubectl commands acess they have to get acess entries Kubernetes RBAC (Authorization)
+
+# Create the IAM Instance Profile
+resource "aws_iam_instance_profile" "bastion" {    # purpose is chnage the iam role for the instance - 
+  name = "${local.common_name}-bastion"     # - we manullay change iam role in action --> security --> modify IAM role for this aws_iam_instance_profile
+  role = aws_iam_role.bastion.name
+}
