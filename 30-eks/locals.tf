@@ -8,6 +8,7 @@ locals {
         Project = var.project
         Environment = var.environment
         Name = "${var.project}-${var.environment}"
+        #Name = "${var.project}"
     }
     common_name = "${var.project}-${var.environment}"
 }

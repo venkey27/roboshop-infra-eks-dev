@@ -2,8 +2,8 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 21.0"
 
-  #name               = local.common_name
-  name               = "${var.project}"
+  name               = local.common_name
+  #name               = "${var.project}"
   kubernetes_version = var.eks_version
 
 
