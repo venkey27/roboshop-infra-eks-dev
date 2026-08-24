@@ -41,7 +41,7 @@ module "eks" {
   # EKS Managed Node Group(s)
   eks_managed_node_groups = {
     blue = {
-      create = var.enable_blue
+      create = var.enable_blue # if create equals to false then blue will not create. if create equals to true then blue will create
       kubernetes_version = var.blue_version
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type       = "AL2023_x86_64_STANDARD"
@@ -69,7 +69,7 @@ module "eks" {
     }
   
     green = {
-      create = var.enable_green
+      create = var.enable_green  # if create equals to false then green will not create. if create equals to true then green will create
       kubernetes_version = var.green_version
       # Starting on 1.30, AL2023 is the default AMI type for EKS managed node groups
       ami_type       = "AL2023_x86_64_STANDARD"
